@@ -28,6 +28,19 @@ def post_category_for_todo(context, todo_title, category_title):
     ), f"Failed to post category '{category_title}' for todo '{todo_title}'"
 
 
+# Helper function to post new tasks
+def post_tasks_for_todo(context, todo_title, task_title):
+
+    todo_id = get_todo_id(todo_title)
+    assert todo_id is not None, f"Todo with title '{todo_title}' not found."
+
+    data = {"title": task_title}
+    context.response = requests.post(f"{API_URL}/todos/{todo_id}/tasksof", json=data)
+    assert (
+        context.response.status_code == 201
+    ), f"Failed to post category '{task_title}' for todo '{todo_title}'"
+
+
 @given("the API is responsive")
 def step_impl(context):
     try:
@@ -109,6 +122,35 @@ def step_impl(context, todo_title, TASK1, TASK2):
     # use helper to post many categories
     post_category_for_todo(context, todo_title, TASK1)
     post_category_for_todo(context, todo_title, TASK2)
+
+
+@given(
+    "the todo with the title '{todo_title}' already has task items '{TASK1}' and '{TASK2}'"
+)
+def step_impl(context, todo_title, TASK1, TASK2):
+    if not context.api_is_running:
+        return
+
+    # use helper to post many tasks
+    post_tasks_for_todo(context, todo_title, TASK1)
+    post_tasks_for_todo(context, todo_title, TASK2)
+
+
+@given("the todo with the title '{todo_title}' has no tasks instances")
+def step_impl(context, todo_title):
+    if not context.api_is_running:
+        return
+
+    todo_id = get_todo_id(todo_title)
+
+    context.response = requests.get(f"{API_URL}/todos/{todo_id}/tasksof")
+    tasks = context.response.json().get("projects", [])
+
+    for task in tasks:
+        task_id = task["id"]
+        context.response = requests.delete(
+            f"{API_URL}/todos/{todo_id}/tasksof/{task_id}"
+        )
 
 
 @when("the user retrieves all todos")
@@ -204,16 +246,28 @@ def step_impl(context, todo_title, new_title):
     if not context.api_is_running:
         return
 
-    # Create the data payload with the new title and description
     data = {"title": new_title}
 
-    # Use get_todo_id helper function to find the todo
     todo_id = get_todo_id(todo_title)
 
-    # Send a PUT request to update the todo with the specified ID
     context.response = requests.put(f"{API_URL}/todos/{todo_id}", json=data)
 
-    # Assert that the update was successful (status code should be 200)
+    assert (
+        context.response.status_code == 200
+    ), f"Failed to update todo with id '{todo_id}'"
+
+
+@when(
+    "the user makes a GET request to /todos/:id/tasksof for the todo with the title '{todo_title}'"
+)
+def step_impl(context, todo_title):
+    if not context.api_is_running:
+        return
+
+    todo_id = get_todo_id(todo_title)
+
+    context.response = requests.get(f"{API_URL}/todos/{todo_id}/tasksof")
+
     assert (
         context.response.status_code == 200
     ), f"Failed to update todo with id '{todo_id}'"
@@ -319,12 +373,22 @@ def step_impl(context, todo_title):
     print(f"Only one todo with title '{todo_title}' exists in the database.")
 
 
-@then("the response contains an empty list")
-def step_impl(context):
+@then("the response contains an empty list for '{key}'")
+def step_impl(context, key):
     if not context.api_is_running:
         return
-    todos = context.response.json()["todos"]
-    assert len(todos) == 0, "Expected an empty list, but found some todos"
+
+    response_data = context.response.json().get(key, None)
+
+    assert response_data is not None, f"Key '{key}' not found in the response."
+    assert isinstance(
+        response_data, list
+    ), f"Expected a list for key '{key}', but found {type(response_data).__name__}."
+
+    # check empty
+    assert (
+        len(response_data) == 0
+    ), f"Expected an empty list for key '{key}', but found some items: {response_data}"
 
 
 @then("the todo with title '{todo_title}' should no longer exist in the database")
@@ -378,3 +442,23 @@ def step_impl(context, category_titles, todo_title):
     print(
         f"All expected categories {expected_categories} are linked to todo '{todo_title}'."
     )
+
+
+@then(
+    "the response of the todo with title '{todo_title}' will include the project with title '{title1}' and '{title2}'"
+)
+def step_impl(context, todo_title, title1, title2):
+    if not context.api_is_running:
+        return
+
+    todo_id = get_todo_id(todo_title)
+
+    response_json = context.response.json()
+    project_titles = [project["title"] for project in response_json["projects"]]
+
+    assert (
+        title1 in project_titles
+    ), f"Expected title '{title1}' but it was not found in {project_titles}"
+    assert (
+        title2 in project_titles
+    ), f"Expected title '{title2}' but it was not found in {project_titles}"

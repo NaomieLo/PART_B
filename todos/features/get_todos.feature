@@ -27,7 +27,7 @@ Feature: Retrieve Todos
     Given the database is empty
     When the user retrieves all todos
     Then the status code 200 will be received
-    And the response contains an empty list
+    And the response contains an empty list for 'todos'
 
   # Error Flow
   Scenario: Fail to retrieve a non-existent todo
