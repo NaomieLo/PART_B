@@ -167,20 +167,26 @@ def step_impl(context):
     context.response = requests.get(f"{API_URL}/todos/9999")
 
 
-@when("the user deletes the todo with title '{todo_title}'")
-def step_impl(context, todo_title):
+@when("the user attempts to retrieve a taskof with a todo with id 9999")
+def step_impl(context):
     if not context.api_is_running:
         return
 
+    context.response = requests.get(f"{API_URL}/todos/9999/tasksof")
+
+
+@when("the user deletes the todo with title '{todo_title}'")
+def step_impl(context, todo_title):
     todo_id = get_todo_id(todo_title)
-    if todo_id:
-        context.response = requests.delete(f"{API_URL}/todos/{todo_id}")
-    else:
-        assert False, f"Todo with title '{todo_title}' not found"
+    context.response = requests.delete(f"{API_URL}/todos/{todo_id}")
+    assert (
+        context.response.status_code == 200
+    ), f"Failed to delete todo with title '{todo_title}'"
 
 
 @when("the user attempts to delete a todo with id 9999")
 def step_impl(context):
+
     if not context.api_is_running:
         return
     context.response = requests.delete(f"{API_URL}/todos/9999")
@@ -373,23 +379,6 @@ def step_impl(context, todo_title):
     print(f"Only one todo with title '{todo_title}' exists in the database.")
 
 
-@then("the response contains an empty list for '{key}'")
-def step_impl(context, key):
-    if not context.api_is_running:
-        return
-
-    response_data = context.response.json().get(key, None)
-
-    assert response_data is not None, f"Key '{key}' not found in the response."
-    assert isinstance(
-        response_data, list
-    ), f"Expected a list for key '{key}', but found {type(response_data).__name__}."
-
-    # check empty
-    assert (
-        len(response_data) == 0
-    ), f"Expected an empty list for key '{key}', but found some items: {response_data}"
-
 
 @then("the todo with title '{todo_title}' should no longer exist in the database")
 def step_impl(context, todo_title):
@@ -400,6 +389,23 @@ def step_impl(context, todo_title):
     assert (
         todo_id is None
     ), "Todo with title '{todo_title}' still exists in the database."
+
+@then("the response contains {list_status} list for '{key}'")
+def step_impl(context, list_status, key):
+    if not context.api_is_running:
+        return
+
+    response_data = context.response.json().get(key, None)
+
+    assert response_data is not None, f"Key '{key}' not found in the response."
+    assert isinstance(response_data, list), f"Expected a list for key '{key}', but found {type(response_data).__name__}."
+
+    if list_status == "an empty":
+        assert len(response_data) == 0, f"Expected an empty list for key '{key}', but found: {response_data}"
+    elif list_status == "a non-empty":
+        assert len(response_data) > 0, f"Expected a non-empty list for key '{key}', but found an empty list."
+    else:
+        raise AssertionError(f"Invalid list status '{list_status}'")
 
 
 @then("an error message '{error_message}' will be displayed")

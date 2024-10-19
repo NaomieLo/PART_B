@@ -20,9 +20,9 @@ Feature: Update Todo
     Then the status code 200 will be received
     And the response contains an empty list for 'projects'
 
+  
   # Error Flow
   Scenario: Fail to retrieve project items for a non-existent todo
-    When the user deletes the todo with title 'Workout'
-    When the user makes a GET request to /todos/:id/tasksof for the todo with the title 'Workout'
+    When the user attempts to retrieve a taskof with a todo with id 9999
     Then the status code 200 will be received
-    And the response contains an empty list for 'projects'
+    And the response contains a non empty list for 'projects'
