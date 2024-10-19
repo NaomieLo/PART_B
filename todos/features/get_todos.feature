@@ -33,6 +33,6 @@ Feature: Retrieve Todos
   Scenario: Fail to retrieve a non-existent todo
     Given the API is responsive
     And the database contains several todos
-    When the user attempts to retrieve a todo with id 9999
+    When the user attempts to retrieve a todo with id 10987654321
     Then the status code 404 will be received
-    And an error message 'Could not find an instance with todos/9999' will be displayed
+    And an error message 'Could not find an instance with todos/10987654321' will be displayed

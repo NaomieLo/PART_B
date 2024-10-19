@@ -23,6 +23,6 @@ Feature: Update Todo
   
   # Error Flow
   Scenario: Fail to retrieve project items for a non-existent todo
-    When the user attempts to retrieve a taskof with a todo with id 9999
+    When the user attempts to retrieve a taskof with a todo with id 10987654321
     Then the status code 200 will be received
     And the response contains a non empty list for 'projects'

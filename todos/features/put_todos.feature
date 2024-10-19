@@ -21,4 +21,4 @@ Feature: Update Todo
   Scenario: Fail to update a non-existent todo
     When the user attempts to update a todo with a non-existent todo
     Then the status code 404 will be received
-    And an error message 'Invalid GUID for 9999 entity todo' will be displayed
+    And an error message 'Invalid GUID for 10987654321 entity todo' will be displayed

@@ -22,4 +22,4 @@ Feature: Post Categories to a Todo
   Scenario: Fail to post a category for a non-existent todo
     When the user attempts to post the category 'Fitness' for a non-existent todo
     Then the status code 404 will be received
-    And an error message 'Could not find parent thing for relationship todos/9999/categories' will be displayed
+    And an error message 'Could not find parent thing for relationship todos/10987654321/categories' will be displayed

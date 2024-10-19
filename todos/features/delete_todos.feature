@@ -20,6 +20,6 @@ Feature: Delete Todo
 
   # Error Flow
   Scenario: Fail to delete a non-existent todo
-    When the user attempts to delete a todo with id 9999
+    When the user attempts to delete a todo with id 10987654321
     Then the status code 404 will be received
-    And an error message 'Could not find any instances with todos/9999' will be displayed
+    And an error message 'Could not find any instances with todos/10987654321' will be displayed

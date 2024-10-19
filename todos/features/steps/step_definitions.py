@@ -160,19 +160,19 @@ def step_impl(context):
     context.response = requests.get(f"{API_URL}/todos")
 
 
-@when("the user attempts to retrieve a todo with id 9999")
+@when("the user attempts to retrieve a todo with id 10987654321")
 def step_impl(context):
     if not context.api_is_running:
         return
-    context.response = requests.get(f"{API_URL}/todos/9999")
+    context.response = requests.get(f"{API_URL}/todos/10987654321")
 
 
-@when("the user attempts to retrieve a taskof with a todo with id 9999")
+@when("the user attempts to retrieve a taskof with a todo with id 10987654321")
 def step_impl(context):
     if not context.api_is_running:
         return
 
-    context.response = requests.get(f"{API_URL}/todos/9999/tasksof")
+    context.response = requests.get(f"{API_URL}/todos/10987654321/tasksof")
 
 
 @when("the user deletes the todo with title '{todo_title}'")
@@ -184,12 +184,12 @@ def step_impl(context, todo_title):
     ), f"Failed to delete todo with title '{todo_title}'"
 
 
-@when("the user attempts to delete a todo with id 9999")
+@when("the user attempts to delete a todo with id 10987654321")
 def step_impl(context):
 
     if not context.api_is_running:
         return
-    context.response = requests.delete(f"{API_URL}/todos/9999")
+    context.response = requests.delete(f"{API_URL}/todos/10987654321")
 
 
 @when(
@@ -210,7 +210,7 @@ def step_impl(context, category_title):
         return
 
     data = {"title": category_title}
-    context.response = requests.post(f"{API_URL}/todos/9999/categories", json=data)
+    context.response = requests.post(f"{API_URL}/todos/10987654321/categories", json=data)
 
 
 @when("the user attempts to update a todo with a non-existent todo")
@@ -219,7 +219,7 @@ def step_impl(context):
         return
 
     data = {"title": "title"}
-    context.response = requests.put(f"{API_URL}/todos/9999", json=data)
+    context.response = requests.put(f"{API_URL}/todos/10987654321", json=data)
 
 
 @when(
@@ -402,8 +402,8 @@ def step_impl(context, list_status, key):
 
     if list_status == "an empty":
         assert len(response_data) == 0, f"Expected an empty list for key '{key}', but found: {response_data}"
-    elif list_status == "a non-empty":
-        assert len(response_data) > 0, f"Expected a non-empty list for key '{key}', but found an empty list."
+    elif list_status == "a non empty":
+        assert len(response_data) > 0, f"Expected a non empty list for key '{key}', but found an empty list."
     else:
         raise AssertionError(f"Invalid list status '{list_status}'")
 
