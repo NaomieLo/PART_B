@@ -1,5 +1,7 @@
 Feature: Update Todo
-  As a user, I want to update the details of an existing todo so that I can modify my tasks.
+  As a user, I want to be able to update the details of an existing todo, including its title, 
+  description, or status, so that I can keep my tasks accurate and reflect any changes in my plans. 
+  This flexibility ensures my todo list remains up-to-date and relevant to my current goals.
 
   Background:
     Given the API is responsive

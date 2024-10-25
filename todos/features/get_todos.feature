@@ -1,5 +1,7 @@
 Feature: Retrieve Todos
-  As a user, I want to retrieve a list of todos so that I can see all my tasks.
+  As a user, I want to retrieve a comprehensive list of all my todos so that I can quickly see all my tasks and their 
+  current statuses. This allows me to stay updated on what needs to be done across my todos and easily prioritize 
+  or manage my tasks.
 
   Background:
     Given the API is responsive

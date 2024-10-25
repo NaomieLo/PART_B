@@ -1,5 +1,7 @@
 Feature: Post Categories to a Todo
-  As a user, I want to add categories to a specific todo so that I can organize my tasks.
+  As a user, I want to add categories to a specific todo, which allows me to group and organize related tasks effectively. 
+  By categorizing my todos, I can better manage different types of tasks, ensuring that related items are easy to 
+  locate and work on together.
 
   Background:
     Given the API is responsive

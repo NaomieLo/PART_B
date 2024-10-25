@@ -1,6 +1,6 @@
 Feature: Update Todo
-  As a user, I want to retrieve the headers for all the categories linked to a specific todo so that I can quickly 
-  assess the details of these categories without loading the full content.
+  As a user, I want to retrieve an overview of tasks associated with a specific todo so that I can quickly review the tasks 
+  linked to that todo. This helps me stay informed on what needs to be done within each todo item.
 
   Background:
     Given the API is responsive

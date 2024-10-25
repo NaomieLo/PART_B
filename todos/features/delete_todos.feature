@@ -1,5 +1,7 @@
 Feature: Delete Todo
-  As a user, I want to delete an existing todo so that I can remove tasks I no longer need.
+  As a user managing my tasks, I want the ability to delete a todo by its title so I can keep my list organized and remove 
+  items that are no longer relevant. This ensures my todo list only includes current tasks, helping me focus on what remains 
+  to be done.
 
   Background:
     Given the API is responsive
