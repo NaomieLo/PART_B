@@ -3,25 +3,107 @@ from behave import given, when, then
 
 API_URL = "http://localhost:4567"
 
+# Helper function to get the project ID given a title
+def get_project_id(title):
+    response = requests.get(f"{API_URL}/projects")
+    assert response.status_code == 200, "Failed to retrieve projects."
+    projects = response.json().get("projects", [])
+    for project in projects:
+        if project["title"] == title:
+            return project["id"]
+    return None
+
+# Delete Project Steps
+
 @given("the API is responsive")
 def step_impl(context):
-    response = requests.get(API_URL)
-    assert response.status_code == 200, "API is not active"
+    try:
+        response = requests.get(API_URL)
+        assert response.status_code == 200, "API is not active"
+        context.api_is_running = True
+    except requests.ConnectionError:
+        context.api_is_running = False
+        assert False, "Could not connect to the API"
 
-@given("there are multiple projects in the database")
-def step_impl(context):
-    # Assuming "Project Alpha" is a sample project in the database
-    data = {"title": "Project Alpha"}
+@given("there is an existing project with title '{project_title}' in the database")
+def step_impl(context, project_title):
+    project_id = get_project_id(project_title)
+    if project_id is None:
+        # Project doesn't exist, so create it
+        data = {"title": project_title}
+        response = requests.post(f"{API_URL}/projects", json=data)
+        assert response.status_code == 201, f"Failed to create project '{project_title}'"
+        context.project_id = response.json()["id"]
+    else:
+        # Project exists, store its ID in context
+        context.project_id = project_id
+
+@given("there is a second project with title '{project_title}' in the database")
+def step_impl(context, project_title):
+    # Create a second instance of the project with the same title
+    data = {"title": project_title}
     response = requests.post(f"{API_URL}/projects", json=data)
-    assert response.status_code == 201, "Failed to create 'Project Alpha'"
+    assert response.status_code == 201, f"Failed to create second project '{project_title}'"
+    context.second_project_id = response.json()["id"]
 
 @given("the database is empty")
 def step_impl(context):
-    # Clear out any existing projects
     response = requests.get(f"{API_URL}/projects")
     projects = response.json().get("projects", [])
+    
+    # Delete each project to ensure the database is empty
     for project in projects:
         requests.delete(f"{API_URL}/projects/{project['id']}")
+    
+    # Verify that all projects are deleted
+    response = requests.get(f"{API_URL}/projects")
+    projects = response.json().get("projects", [])
+    assert len(projects) == 0, "Database is not empty after deletion."
+
+@given("the project with title '{project_title}' already has categories '{category1}' and '{category2}'")
+def step_impl(context, project_title, category1, category2):
+    project_id = get_project_id(project_title)
+    assert project_id is not None, f"Project with title '{project_title}' not found."
+
+    # Helper function to create a category if it does not already exist
+    def ensure_category_exists(category_title):
+        response = requests.get(f"{API_URL}/categories")
+        categories = response.json().get("categories", [])
+        category_id = next((cat["id"] for cat in categories if cat["title"] == category_title), None)
+        if category_id is None:
+            # Category does not exist, so create it
+            data = {"title": category_title}
+            response = requests.post(f"{API_URL}/categories", json=data)
+            assert response.status_code == 201, f"Failed to create category '{category_title}'"
+            category_id = response.json()["id"]
+        return category_id
+
+    # Ensure both categories exist
+    category1_id = ensure_category_exists(category1)
+    category2_id = ensure_category_exists(category2)
+
+    # Link the categories to the project if they aren't already linked
+    response = requests.get(f"{API_URL}/projects/{project_id}/categories")
+    existing_categories = response.json().get("categories", [])
+    existing_category_titles = [cat["title"] for cat in existing_categories]
+
+    if category1 not in existing_category_titles:
+        requests.post(f"{API_URL}/projects/{project_id}/categories", json={"id": category1_id})
+
+    if category2 not in existing_category_titles:
+        requests.post(f"{API_URL}/projects/{project_id}/categories", json={"id": category2_id})
+   
+
+@when("the user deletes the project with title '{project_title}'")
+def step_impl(context, project_title):
+    project_id = get_project_id(project_title)
+    assert project_id is not None, f"Project '{project_title}' not found for deletion."
+    context.response = requests.delete(f"{API_URL}/projects/{project_id}")
+
+@when("the user attempts to delete a project with id {project_id}")
+def step_impl(context, project_id):
+    # Attempting to delete a project with a non-existent ID
+    context.response = requests.delete(f"{API_URL}/projects/{project_id}")
 
 @when("the user retrieves all projects")
 def step_impl(context):
@@ -35,150 +117,120 @@ def step_impl(context, project_id):
 def step_impl(context, status_code):
     assert context.response.status_code == status_code, f"Expected {status_code}, got {context.response.status_code}"
 
-@then("the response contains a list of projects")
-def step_impl(context):
-    projects = context.response.json().get("projects", [])
-    assert len(projects) > 0, "Expected list of projects but got empty"
-
-@then('the response contains an empty list for "{key}"')
-def step_impl(context, key):
-    data_list = context.response.json().get(key, [])
-    assert data_list == [], f"Expected empty list for '{key}', but got: {data_list}"
-
-@then("the project with title {project_title} is included in the list")
+@then("the project with title '{project_title}' should no longer exist in the database")
 def step_impl(context, project_title):
-    projects = context.response.json().get("projects", [])
-    assert any(project["title"] == project_title for project in projects), f"Project '{project_title}' not found"
+    project_id = get_project_id(project_title)
+    assert project_id is None, f"Project '{project_title}' still exists in the database."
 
-@then('an error message "{message}" will be displayed')
-def step_impl(context, message):
-    error_message = context.response.json().get("error", "")
-    assert message in error_message, f"Expected error message '{message}', but got '{error_message}'"
-
-@given("there is an existing project with title {project_title}")
+@then("only one project with title '{project_title}' should exist in the database")
 def step_impl(context, project_title):
-    # Create a project with the given title if it doesn't already exist
-    data = {"title": project_title}
-    requests.post(f"{API_URL}/projects", json=data)
+    response = requests.get(f"{API_URL}/projects")
+    projects = response.json().get("projects", [])
+    projects_with_title = [project for project in projects if project["title"] == project_title]
+    assert len(projects_with_title) == 1, f"Expected only one project with title '{project_title}', but found {len(projects_with_title)}."
 
-@when("the user creates a project with title {title} and description {description}")
+@then("an error message '{error_message}' will be displayed")
+def step_impl(context, error_message):
+    error_message_received = context.response.json().get("errorMessage", "")
+    assert error_message in error_message_received, f"Expected error message '{error_message}', but got '{error_message_received}'"
+
+# Create Project Steps
+
+@when("the user creates a project with title '{title}' and description '{description}'")
 def step_impl(context, title, description):
     data = {"title": title, "description": description}
     context.response = requests.post(f"{API_URL}/projects", json=data)
 
-@when("the user attempts to create a project with title {title}")
+@when("the user creates a project with title '{title}'")
 def step_impl(context, title):
     data = {"title": title}
     context.response = requests.post(f"{API_URL}/projects", json=data)
 
-@then("the response will contain a project with title {title}")
+@when("the user attempts to create a project with title '{title}'")
+def step_impl(context, title):
+    data = {"title": title}
+    context.response = requests.post(f"{API_URL}/projects", json=data)
+
+@when("the user posts the category '{category_title}' for the project with title '{project_title}'")
+def step_impl(context, category_title, project_title):
+    project_id = get_project_id(project_title)
+    assert project_id is not None, f"Project with title '{project_title}' not found."
+
+    data = {"title": category_title}
+    context.response = requests.post(f"{API_URL}/projects/{project_id}/categories", json=data)
+
+@when("the user attempts to post the category '{category_title}' for a non-existent project")
+def step_impl(context, category_title):
+    non_existent_project_id = 123456789  # Arbitrary ID for non-existent project
+    data = {"title": category_title}
+    context.response = requests.post(f"{API_URL}/projects/{non_existent_project_id}/categories", json=data)
+
+
+@then("the response will contain a project with title '{title}'")
 def step_impl(context, title):
     project = context.response.json()
     assert project["title"] == title, f"Expected project title '{title}', but got '{project.get('title')}'"
 
-@when("the user deletes the project with title {title}")
-def step_impl(context, title):
-    # Retrieve project ID based on title
-    response = requests.get(f"{API_URL}/projects")
-    projects = response.json().get("projects", [])
-    project_id = next((project["id"] for project in projects if project["title"] == title), None)
-    assert project_id is not None, f"Project '{title}' not found for deletion"
-    
-    # Perform delete action
-    context.response = requests.delete(f"{API_URL}/projects/{project_id}")
+# Update Project Steps
 
-@then("the project with title {title} should no longer exist in the database")
-def step_impl(context, title):
-    response = requests.get(f"{API_URL}/projects")
-    projects = response.json().get("projects", [])
-    assert not any(project["title"] == title for project in projects), f"Project '{title}' was not deleted"
-    
-@given("there is an existing project with title {project_title}")
-def step_impl(context, project_title):
-    # Create a project with the given title if it doesn't already exist
-    data = {"title": project_title}
-    requests.post(f"{API_URL}/projects", json=data)
-
-@when("the user updates the project with title {old_title} to have title {new_title} and description {new_description}")
+@when("the user updates the project with title '{old_title}' to have title '{new_title}' and description '{new_description}'")
 def step_impl(context, old_title, new_title, new_description):
-    # Retrieve the project ID based on the old title
-    response = requests.get(f"{API_URL}/projects")
-    projects = response.json().get("projects", [])
-    project_id = next((project["id"] for project in projects if project["title"] == old_title), None)
-    assert project_id is not None, f"Project '{old_title}' not found for update"
+    project_id = get_project_id(old_title)
+    assert project_id is not None, f"Project '{old_title}' not found for update."
 
-    # Perform update action
     data = {"title": new_title, "description": new_description}
     context.response = requests.put(f"{API_URL}/projects/{project_id}", json=data)
 
-@when("the user updates the project with title {old_title} to have title {new_title}")
+@when("the user updates the project with title '{old_title}' to have title '{new_title}'")
 def step_impl(context, old_title, new_title):
-    # Retrieve the project ID based on the old title
-    response = requests.get(f"{API_URL}/projects")
-    projects = response.json().get("projects", [])
-    project_id = next((project["id"] for project in projects if project["title"] == old_title), None)
-    assert project_id is not None, f"Project '{old_title}' not found for update"
+    project_id = get_project_id(old_title)
+    assert project_id is not None, f"Project '{old_title}' not found for update."
 
-    # Perform update action with only the new title
     data = {"title": new_title}
     context.response = requests.put(f"{API_URL}/projects/{project_id}", json=data)
 
 @when("the user attempts to update a project with id {project_id}")
 def step_impl(context, project_id):
-    # Try to update a project that doesn’t exist
     data = {"title": "Non-existent Project", "description": "This should fail"}
     context.response = requests.put(f"{API_URL}/projects/{project_id}", json=data)
 
-@then("the project with title {title} should exist in the database")
-def step_impl(context, title):
+@then("the project with new title '{new_title}' has new description '{new_description}'")
+def step_impl(context, new_title, new_description):
+    project_id = get_project_id(new_title)
+    assert project_id is not None, f"Project '{new_title}' not found."
+
+    response = requests.get(f"{API_URL}/projects/{project_id}")
+    project = response.json()
+    assert project["title"] == new_title, f"Expected title '{new_title}', but got '{project.get('title')}'"
+    assert project["description"] == new_description, f"Expected description '{new_description}', but got '{project.get('description')}'"
+
+@then("the project with title '{project_title}' should exist in the database")
+def step_impl(context, project_title):
     response = requests.get(f"{API_URL}/projects")
     projects = response.json().get("projects", [])
-    assert any(project["title"] == title for project in projects), f"Project '{title}' not found"
+    assert any(project["title"] == project_title for project in projects), f"Project '{project_title}' not found in the database."
 
-@given("there is a category with title {category_title}")
-def step_impl(context, category_title):
-    # Create a category with the given title if it doesn't already exist
-    data = {"title": category_title}
-    response = requests.post(f"{API_URL}/categories", json=data)
-    assert response.status_code == 201, f"Failed to create category '{category_title}'"
+@then("the response contains a list of projects")
+def step_impl(context):
+    projects = context.response.json().get("projects", [])
+    assert isinstance(projects, list), "Expected 'projects' to be a list."
+    assert len(projects) > 0, "Expected a non-empty list of projects but got empty."
 
-@when("the user links the category {category_title} to the project with title {project_title}")
+@then("the project with title '{project_title}' is included in the list")
+def step_impl(context, project_title):
+    projects = context.response.json().get("projects", [])
+    assert any(project["title"] == project_title for project in projects), f"Project with title '{project_title}' not found in the response."
+
+@then("the response contains an empty list for 'projects'")
+def step_impl(context):
+    projects = context.response.json().get("projects", [])
+    assert projects == [], "Expected 'projects' to be an empty list, but got non-empty data."
+
+@then("the response contains categories '{category_title}' for the project with the title '{project_title}'")
 def step_impl(context, category_title, project_title):
-    # Retrieve project ID
-    response = requests.get(f"{API_URL}/projects")
-    projects = response.json().get("projects", [])
-    project_id = next((project["id"] for project in projects if project["title"] == project_title), None)
-    assert project_id is not None, f"Project '{project_title}' not found for linking category"
+    project_id = get_project_id(project_title)
+    assert project_id is not None, f"Project '{project_title}' not found."
 
-    # Retrieve category ID
-    response = requests.get(f"{API_URL}/categories")
-    categories = response.json().get("categories", [])
-    category_id = next((category["id"] for category in categories if category["title"] == category_title), None)
-    assert category_id is not None, f"Category '{category_title}' not found for linking"
-
-    # Perform link action
-    context.response = requests.post(f"{API_URL}/projects/{project_id}/categories", json={"id": category_id})
-
-@when("the user attempts to link the category {category_title} to a project with id {project_id}")
-def step_impl(context, category_title, project_id):
-    # Retrieve category ID
-    response = requests.get(f"{API_URL}/categories")
-    categories = response.json().get("categories", [])
-    category_id = next((category["id"] for category in categories if category["title"] == category_title), None)
-    assert category_id is not None, f"Category '{category_title}' not found for linking"
-
-    # Attempt to link the category to a non-existent project
-    context.response = requests.post(f"{API_URL}/projects/{project_id}/categories", json={"id": category_id})
-
-@then("the project with title {project_title} will contain the category {category_title}")
-def step_impl(context, project_title, category_title):
-    # Retrieve project ID
-    response = requests.get(f"{API_URL}/projects")
-    projects = response.json().get("projects", [])
-    project_id = next((project["id"] for project in projects if project["title"] == project_title), None)
-    assert project_id is not None, f"Project '{project_title}' not found for verification"
-
-    # Check if the project contains the category
     response = requests.get(f"{API_URL}/projects/{project_id}/categories")
     categories = response.json().get("categories", [])
-    assert any(category["title"] == category_title for category in categories), f"Category '{category_title}' not linked to project '{project_title}'"
+    assert any(category["title"] == category_title for category in categories), f"Category '{category_title}' not found for project '{project_title}'."

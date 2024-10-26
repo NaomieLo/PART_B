@@ -3,15 +3,23 @@ Feature: Link Category to Project
 
   Background:
     Given the API is responsive
-    And there is an existing project with title "Organized Project" in the database
-    And there is a category with title "Urgent"
+    And there is an existing project with title 'Organized Project' in the database
 
-  Scenario: Successfully link a category to a project
-    When the user links the category "Urgent" to the project with title "Organized Project"
+  # Normal Flow
+  Scenario: Successfully post categories to a project
+    When the user posts the category 'Urgent' for the project with title 'Organized Project'
     Then the status code 201 will be received
-    And the project with title "Organized Project" will contain the category "Urgent"
+    And the response contains categories 'Urgent' for the project with the title 'Organized Project'
 
+ # Alternate Flow
+  Scenario: Post multiple categories to a project
+    Given the project with title 'Organized Project' already has categories 'Not Urgent' and 'Not Categorized'
+    When the user posts the category 'Urgent' for the project with title 'Organized Project'
+    Then the status code 201 will be received
+    And the response contains categories 'Not Urgent, Not Categorized, Organized Project' for the project with the title 'Organized Project'
+
+  # Error Flow
   Scenario: Fail to link a category to a non-existent project
-    When the user attempts to link the category "Urgent" to a project with id 123456789
+    When the user attempts to post the category 'Non-Urgent' for a non-existent project
     Then the status code 404 will be received
-    And an error message "Project not found" will be displayed
+    And an error message 'Could not find parent thing for relationship projects/123456789/categories' will be displayed
