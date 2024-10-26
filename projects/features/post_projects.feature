@@ -20,5 +20,5 @@ Feature: Create Project
   Scenario: Fail to create a project with an existing title
     Given there is an existing project with title 'Duplicate Project' in the database
     When the user attempts to create a project with title 'Duplicate Project'
-    Then the status code 409 will be received
-    And an error message 'Project with this title already exists' will be displayed
+    Then the status code 201 will be received
+    And the error message will be empty

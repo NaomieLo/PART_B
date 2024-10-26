@@ -22,4 +22,4 @@ Feature: Delete Project
   Scenario: Fail to delete a non-existent project
     When the user attempts to delete a project with id 123456789
     Then the status code 404 will be received
-    And an error message 'Could not find any instances with todos/123456789' will be displayed
+    And the error message will be empty

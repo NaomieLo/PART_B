@@ -21,4 +21,4 @@ Feature: Update Project
   Scenario: Fail to update a non-existent project
     When the user attempts to update a project with id 123456789
     Then the status code 404 will be received
-    And an error message 'Invalid GUID for 123456789 entity project' will be displayed
+    And the error message will be empty

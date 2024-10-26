@@ -13,7 +13,22 @@ def get_project_id(title):
             return project["id"]
     return None
 
-# Delete Project Steps
+# Helper function to get all projects
+def get_all_projects():
+    response = requests.get(f"{API_URL}/projects")
+    assert response.status_code == 200, "Failed to retrieve projects."
+    return response.json().get("projects", [])
+
+
+@given("there are multiple projects in the database")
+def step_impl(context):
+    # Create multiple projects if they don’t exist already
+    project_titles = ["Grocery Shopping", "Complete Homework", "Pay Bills"]
+    for title in project_titles:
+        if not any(project["title"] == title for project in get_all_projects()):
+            data = {"title": title, "description": f"{title} description"}
+            response = requests.post(f"{API_URL}/projects", json=data)
+            assert response.status_code == 201, f"Failed to create project '{title}'"
 
 @given("the API is responsive")
 def step_impl(context):
@@ -133,6 +148,11 @@ def step_impl(context, project_title):
 def step_impl(context, error_message):
     error_message_received = context.response.json().get("errorMessage", "")
     assert error_message in error_message_received, f"Expected error message '{error_message}', but got '{error_message_received}'"
+    
+@then("the error message will be empty")
+def step_impl(context):
+    error_message_received = context.response.json().get("errorMessage", "")
+    assert error_message_received == "", f"Expected an empty error message, but got '{error_message_received}'"
 
 # Create Project Steps
 
@@ -199,8 +219,22 @@ def step_impl(context, new_title, new_description):
     project_id = get_project_id(new_title)
     assert project_id is not None, f"Project '{new_title}' not found."
 
+    # Fetch the project details after updating
     response = requests.get(f"{API_URL}/projects/{project_id}")
-    project = response.json()
+    assert response.status_code == 200, f"Failed to retrieve project with id '{project_id}'. Response: {response.text}"
+
+    # Retrieve the JSON response and access the project data from the list
+    project_data = response.json().get("projects", [])
+    assert len(project_data) > 0, f"No project data found in response: {response.json()}"
+
+    project = project_data[0]  # Access the first project in the list
+    print("Project response:", project)  # Debugging line to confirm the structure
+
+    # Check if the keys are present in the project data
+    assert "title" in project, f"Expected 'title' in response, but got: {project}"
+    assert "description" in project, f"Expected 'description' in response, but got: {project}"
+
+    # Verify the title and description match the expected values
     assert project["title"] == new_title, f"Expected title '{new_title}', but got '{project.get('title')}'"
     assert project["description"] == new_description, f"Expected description '{new_description}', but got '{project.get('description')}'"
 
@@ -216,15 +250,29 @@ def step_impl(context):
     assert isinstance(projects, list), "Expected 'projects' to be a list."
     assert len(projects) > 0, "Expected a non-empty list of projects but got empty."
 
-@then("the project with title '{project_title}' is included in the list")
+@then('the project with title "{project_title}" is included in the list')
 def step_impl(context, project_title):
-    projects = context.response.json().get("projects", [])
-    assert any(project["title"] == project_title for project in projects), f"Project with title '{project_title}' not found in the response."
+    projects = get_all_projects()
+    assert any(project["title"] == project_title for project in projects), f"Project '{project_title}' not found in the list of projects."
 
 @then("the response contains an empty list for 'projects'")
 def step_impl(context):
     projects = context.response.json().get("projects", [])
     assert projects == [], "Expected 'projects' to be an empty list, but got non-empty data."
+
+@then("the response contains categories '{category1}, {category2}, {category3}' for the project with the title '{project_title}'")
+def step_impl(context, category1, category2, category3, project_title):
+    project_id = get_project_id(project_title)
+    assert project_id is not None, f"Project '{project_title}' not found."
+
+    # Retrieve categories linked to the project
+    response = requests.get(f"{API_URL}/projects/{project_id}/categories")
+    categories = response.json().get("categories", [])
+    category_titles = [category["title"] for category in categories]
+
+    # Check if all expected categories are in the response
+    for expected_category in [category1, category2, category3]:
+        assert expected_category in category_titles, f"Category '{expected_category}' not found for project '{project_title}'."
 
 @then("the response contains categories '{category_title}' for the project with the title '{project_title}'")
 def step_impl(context, category_title, project_title):

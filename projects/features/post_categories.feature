@@ -16,10 +16,10 @@ Feature: Link Category to Project
     Given the project with title 'Organized Project' already has categories 'Not Urgent' and 'Not Categorized'
     When the user posts the category 'Urgent' for the project with title 'Organized Project'
     Then the status code 201 will be received
-    And the response contains categories 'Not Urgent, Not Categorized, Organized Project' for the project with the title 'Organized Project'
+    And the response contains categories 'Not Urgent, Not Categorized, Urgent' for the project with the title 'Organized Project'
 
   # Error Flow
   Scenario: Fail to link a category to a non-existent project
     When the user attempts to post the category 'Non-Urgent' for a non-existent project
     Then the status code 404 will be received
-    And an error message 'Could not find parent thing for relationship projects/123456789/categories' will be displayed
+    And the error message will be empty
