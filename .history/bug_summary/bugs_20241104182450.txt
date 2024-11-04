@@ -1,0 +1,14 @@
+BUG SUMMARY 1 ------------------------------------
+
+Tasksof will return values when called on an instance does not exists 
+
+Description of Bug: When making a GET request to /todos/:id/tasksof for a non-existent todo, the system returns a 200 OK status code with task data from other existing todo instances, rather than returning a 404 Not Found error. This is unexpected, as the correct behavior should be a 404 response indicating that the specified todo does not exist. Additionally, the GET request sometimes returns a project instance, which is confusing given that relationships between todos and projects are not fully defined in the current setup.
+
+Potential Impact of Bug on Operation of System: The inconsistent ID generation may lead to confusion during data management and retrieval, particularly in systems that rely on sequential ordering of resource IDs. It could also result in unexpected behavior if external systems or users are assuming IDs follow the same generation logic across resources.
+
+Steps to Reproduce the Bug:
+1. Create a new category without specifying an ID.
+2. Create a new task without specifying an ID.
+3. Observe that the category ID is generated as last ID + 2, while the task ID is generated as last ID + 1.
+
+

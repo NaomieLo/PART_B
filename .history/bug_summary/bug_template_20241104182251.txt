@@ -1,0 +1,4 @@
+Executive summary (80 chars)
+Description of bug
+Potential impavt of bug on operation of system
+Steps to reporduce the bug

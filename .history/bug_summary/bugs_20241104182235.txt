@@ -1,0 +1,36 @@
+UG SUMMARY 1 ------------------------------------
+
+ID generation for categories and tasks is inconsistent, causing confusion.
+
+Description of Bug: When a new category is created without specifying an ID, the generated ID starts at last ID + 2 and increments by 1. However, for tasks, the ID starts at last ID + 1. This inconsistency in ID generation creates confusion, especially when managing different resources in the system.
+
+Potential Impact of Bug on Operation of System: The inconsistent ID generation may lead to confusion during data management and retrieval, particularly in systems that rely on sequential ordering of resource IDs. It could also result in unexpected behavior if external systems or users are assuming IDs follow the same generation logic across resources.
+
+Steps to Reproduce the Bug:
+1. Create a new category without specifying an ID.
+2. Create a new task without specifying an ID.
+3. Observe that the category ID is generated as last ID + 2, while the task ID is generated as last ID + 1.
+
+BUG SUMMARY 2 ------------------------------------
+
+Specifying an ID in JSON or XML with POST results in an invalid syntax error.
+
+Description of Bug: When attempting to specify an ID in either JSON or XML format during a POST request, an error is returned indicating that the syntax is invalid. This prevents the ability to manually set IDs when creating new resources, restricting control over resource identifiers.
+
+Potential Impact of Bug on Operation of System: This bug limits users’ ability to define custom IDs, which can be crucial for integration with other systems or for maintaining consistency across datasets. The inability to set specific IDs could also complicate data migration tasks and synchronization processes.
+
+Steps to Reproduce the Bug:
+1. Send a POST request to create a new resource (category or task), specifying an ID in the JSON or XML body.
+2. Observe the error indicating the syntax is invalid.
+
+BUG SUMMARY 3 ------------------------------------
+
+Executive Summary: HEAD requests provide no response content or errors, creating ambiguity.
+
+Description of Bug: When performing HEAD requests on resources, no data is returned and no errors are provided. This behavior is unclear since a typical HEAD request should return headers, indicating resource metadata without the body. The lack of any response or error makes it challenging to determine whether the request was processed correctly or if there was an issue.
+
+Potential Impact of Bug on Operation of System: The ambiguous response to HEAD requests may lead to issues in system monitoring or health checks, where HEAD requests are often used to verify resource availability. Users or developers attempting to use HEAD for metadata may be left uncertain about the state of the requested resource, which could undermine reliability in automated processes.
+
+Steps to Reproduce the Bug:
+1. Send a HEAD request to any endpoint, such as /todos.
+2. Observe that no data or errors are returned, making it unclear if the request succeeded.

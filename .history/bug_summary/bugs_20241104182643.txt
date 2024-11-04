@@ -1,0 +1,26 @@
+BUG SUMMARY 1 ------------------------------------
+
+Tasksof will return values when called on an instance does not exists 
+
+Description of Bug: When making a GET request to /todos/:id/tasksof for a non-existent todo, the system returns a 200 OK status code with task data from other existing todo instances, rather than returning a 404 Not Found error. This is unexpected, as the correct behavior should be a 404 response indicating that the specified todo does not exist. Additionally, the GET request sometimes returns a project instance, which is confusing given that relationships between todos and projects are not fully defined in the current setup.
+
+Potential Impact of Bug on Operation of System: The unexpected 200 OK response can create confusion for users and developers by obscuring the true state of the todo resource. This may also lead to data retrieval inconsistencies and misinterpretations.
+
+Steps to Reproduce the Bug:
+1. Make a GET request to /todos/:id/tasksof for an ID that does not correspond to an existing todo.
+2. Observe that a 200 OK status code is returned with tasks data from other existing todos, instead of a 404 Not Found response.
+
+
+BUG SUMMARY 2 ------------------------------------
+
+Unable to specify ID when creating a new instance. 
+
+Description of Bug: IDs for entities such as todos, projects, and categories change upon recreation.
+
+Potential Impact of Bug on Operation of System: The unexpected 200 OK response can create confusion for users and developers by obscuring the true state of the todo resource. This may also lead to data retrieval inconsistencies and misinterpretations.
+
+Steps to Reproduce the Bug:
+1. Make a GET request to /todos/:id/tasksof for an ID that does not correspond to an existing todo.
+2. Observe that a 200 OK status code is returned with tasks data from other existing todos, instead of a 404 Not Found response.
+
+

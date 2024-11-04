@@ -1,0 +1,14 @@
+BUG SUMMARY 1 ------------------------------------
+
+Tasksof will return values when called on an instance does not exists 
+
+Description of Bug: When a new category is created without specifying an ID, the generated ID starts at last ID + 2 and increments by 1. However, for tasks, the ID starts at last ID + 1. This inconsistency in ID generation creates confusion, especially when managing different resources in the system.
+
+Potential Impact of Bug on Operation of System: The inconsistent ID generation may lead to confusion during data management and retrieval, particularly in systems that rely on sequential ordering of resource IDs. It could also result in unexpected behavior if external systems or users are assuming IDs follow the same generation logic across resources.
+
+Steps to Reproduce the Bug:
+1. Create a new category without specifying an ID.
+2. Create a new task without specifying an ID.
+3. Observe that the category ID is generated as last ID + 2, while the task ID is generated as last ID + 1.
+
+
