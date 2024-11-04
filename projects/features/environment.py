@@ -42,8 +42,6 @@ def capture_initial_state(context):
     except requests.ConnectionError:
         print(f"Could not connect to the API at {API_URL}")
         exit(1)
-
-
 def restore_initial_state(context):
     # Fetch the current state of projects and categories
     projects_response = requests.get(f"{API_URL}/projects")
@@ -72,9 +70,10 @@ def restore_initial_state(context):
                 update_data = {
                     "title": initial_project["title"],
                     "description": initial_project["description"],
-                    "active": initial_project["active"],
-                    "completed": initial_project["completed"],
+                    "active": bool(initial_project["active"] == "true"),  # Convert to boolean
+                    "completed": bool(initial_project["completed"] == "true"),  # Convert to boolean
                 }
+                print(f"Updating project '{initial_project['title']}' with data: {update_data}")
                 update_response = requests.put(f"{API_URL}/projects/{existing_project['id']}", json=update_data)
                 assert update_response.status_code in [200, 204], f"Failed to update project '{initial_project['title']}'"
 
@@ -89,6 +88,7 @@ def restore_initial_state(context):
 
             for category in initial_project["categories"]:
                 if category not in current_categories:
+                    print(f"Adding category '{category['title']}' to project '{initial_project['title']}'")
                     create_response = requests.post(f"{API_URL}/projects/{existing_project['id']}/categories", json=category)
                     assert create_response.status_code == 201, f"Failed to add category '{category['title']}' to project '{initial_project['title']}'"
 
@@ -97,14 +97,16 @@ def restore_initial_state(context):
             create_data = {
                 "title": initial_project["title"],
                 "description": initial_project["description"],
-                "active": initial_project["active"],
-                "completed": initial_project["completed"],
+                "active": bool(initial_project["active"] == "true"),  # Convert to boolean
+                "completed": bool(initial_project["completed"] == "true"),  # Convert to boolean
             }
+            print(f"Creating project '{initial_project['title']}' with data: {create_data}")
             create_response = requests.post(f"{API_URL}/projects", json=create_data)
             assert create_response.status_code == 201, f"Failed to recreate project '{initial_project['title']}'"
             new_project_id = create_response.json()["id"]
 
             for category in initial_project["categories"]:
+                print(f"Adding category '{category['title']}' to recreated project '{initial_project['title']}'")
                 create_response = requests.post(f"{API_URL}/projects/{new_project_id}/categories", json=category)
                 assert create_response.status_code == 201, f"Failed to add category '{category['title']}' to project '{initial_project['title']}'"
 
@@ -124,6 +126,7 @@ def restore_initial_state(context):
                     "title": initial_category["title"],
                     "description": initial_category["description"],
                 }
+                print(f"Updating standalone category '{initial_category['title']}' with data: {update_data}")
                 update_response = requests.put(f"{API_URL}/categories/{existing_category['id']}", json=update_data)
                 assert update_response.status_code in [200, 204], f"Failed to update category '{initial_category['title']}'"
         else:
@@ -132,6 +135,7 @@ def restore_initial_state(context):
                 "title": initial_category["title"],
                 "description": initial_category["description"],
             }
+            print(f"Creating standalone category '{initial_category['title']}' with data: {data}")
             create_response = requests.post(f"{API_URL}/categories", json=data)
             assert create_response.status_code == 201, f"Failed to recreate category '{initial_category['title']}'"
 
