@@ -23,3 +23,20 @@ Steps to Reproduce the Bug:
 Create an entity (e.g., todo) with a specific title.
 Delete and recreate the entity with the same title.
 Observe that the new ID differs from the original, requiring dynamic ID retrieval methods in subsequent operations.
+
+BUG SUMMARY 3 ------------------------------------
+
+API returns 200 instead of 404 when retrieving categories for a non-existent project
+
+Description of Bug: When attempting to retrieve categories for a project that doesn't exist in the database, the API respond with a 200 status code, indicating success, rather than the expected 404 status code for "not found". 
+
+Potential Impact of Bug on Operation of System: For the application users relying on this API, clients may incorrectly assume a project exists and proceed with additional actions based on the assumption that categories were succesfully retrieved.
+
+Steps to Reproduce the Bug:
+1. Confirm the resource (project with a specific ID) does not exist in the database.
+2. Send a request to retrieve categories data related to the non-existent project:
+    GET http://localhost:4567/projects/<non-existent-resource-id>/categories
+3. Observe the response: Expected: Status code 404. Actual: Status code 200
+
+
+
